@@ -60,7 +60,7 @@
   }return originalOpen.call(this,url,...args);
  };
  window.addEventListener('message',e=>{
-  if(e.source!==window||e.origin!==location.origin||e.data?.type!=='TPK_CONNECT_V122'||!e.ports?.[0])return;
+  if(e.source!==window||e.origin!==location.origin||e.data?.type!=='TPK_CONNECT_V131'||!e.ports?.[0])return;
   if(port)return;port=e.ports[0];
   port.onmessage=event=>{const m=event.data;
    if(m?.type==='arm'&&typeof m.token==='string'){

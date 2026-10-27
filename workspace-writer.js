@@ -6,6 +6,7 @@
    if(m.op==='state')return {ready:!!writer,directory:writer?.root.name||'',permission:writer?await writer.root.queryPermission({mode:'readwrite'}):'prompt'};
    if(!writer)throw Error('請先在拾圖工作台選擇存檔資料夾。');
    if(m.op==='existing')return writer.existing(m);
+   if(m.op==='parameters')return writer.parameters(m);
    if(m.op==='sidecar')return writer.sidecar(m);
    if(m.op==='start'){
     if(!Number.isSafeInteger(m.size)||m.size<=0||m.size>512*1024*1024)throw Error('單張檔案超過支援範圍，已停止，不會以縮圖代替。');
