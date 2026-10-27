@@ -1,0 +1,66 @@
+{
+  "manifest_version": 3,
+  "name": "拾圖 · Tensor Post Keeper",
+  "version": "1.2.2",
+  "description": "記憶存檔資料夾，直接寫入原始圖片；支援單篇與作者頁批次，避免重複資料夾並核對原檔完整性。",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "拾圖：展開／收合下載面板",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png"
+    }
+  },
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://tensor.art/*",
+        "https://www.tensor.art/*",
+        "https://tensorhub.art/*",
+        "https://www.tensorhub.art/*"
+      ],
+      "js": [
+        "native-bridge.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://tensor.art/*",
+        "https://www.tensor.art/*",
+        "https://tensorhub.art/*",
+        "https://www.tensorhub.art/*"
+      ],
+      "js": [
+        "core.js",
+        "capture.js",
+        "profile.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "incognito": "split",
+  "host_permissions": [
+    "https://tensor.art/*",
+    "https://www.tensor.art/*",
+    "https://tensorhub.art/*",
+    "https://www.tensorhub.art/*",
+    "https://*.tensorartassets.com/*",
+    "https://*.tensorhubassets.com/*",
+    "https://images.tensor.art/*"
+  ]
+}
