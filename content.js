@@ -1,5 +1,5 @@
 (()=>{'use strict';if(globalThis.__TPK__)return;globalThis.__TPK__=true;
-const C=TPKCore, VERSION='1.3.1', sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const C=TPKCore, VERSION='1.4.0', sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let running=false,stop=false,paused=false,currentJob=null,last=null,host,ui,collapsed=false;
 async function send(m){const r=await chrome.runtime.sendMessage(m);if(!r?.ok)throw Error(r?.error||'擴充功能已重新載入，請重新整理此頁。');return r;}
 function visible(e){return !!(e&&e.getClientRects().length)&&getComputedStyle(e).visibility!=='hidden';}
@@ -41,8 +41,8 @@ async function go(item){
  await sleep(350);return waitFor(()=>{const n=gallery();return n&&C.imageId(location.href)===item.id&&!n.button.disabled&&n;});
 }
 async function downloadOne(job,item,index){
- if(job.skipExisting){const existing=await send({type:'existing',post:job.post,batch:job.batch,image:item.id});if(existing.exists){const pageInfo=job.sidecar?await readParameters((await go(item)).scope):null;return {id:item.id,state:'complete',skipped:true,...existing.record,pageInfo};}}
- const g=await go(item),meta=job.sidecar?await readParameters(g.scope):null;const armed=await send({type:'arm',post:job.post,batch:job.batch,image:item.id,index});currentJob=armed.token;
+ if(job.skipExisting){const existing=await send({type:'existing',post:job.post,batch:job.batch,image:item.id});if(existing.exists){const pageInfo=(job.sidecar||job.embed)?await readParameters((await go(item)).scope):null;return {id:item.id,state:'complete',skipped:true,...existing.record,pageInfo};}}
+ const g=await go(item),meta=(job.sidecar||job.embed)?await readParameters(g.scope):null;const armed=await send({type:'arm',post:job.post,batch:job.batch,image:item.id,index});currentJob=armed.token;
  try{
   status(`第 ${index+1} / ${job.items.length} 張：等候網站提供原檔…`);
   const file=await TPKCapture.capture(armed.token,g.button,()=>stop);
@@ -62,7 +62,7 @@ async function readParameters(s){await sleep(700);let previous=null,value;for(le
 async function run(retry=false,options={}){
  const g=gallery();if(!g||running)return;
  if(retry&&last&&!last.items.every(i=>g.items.some(x=>x.id===i.id))){status('目前是另一篇貼文，請先回到原貼文再重試。');return;}
- const job=retry?last:{post:g.post,items:g.items,results:[],batch:options.batch||'',sidecar:!!options.sidecar,skipExisting:options.skipExisting!==false,source:location.href,createdAt:new Date().toISOString()};
+ const job=retry?last:{post:g.post,items:g.items,results:[],batch:options.batch||'',sidecar:!!options.sidecar,embed:!!options.embed,skipExisting:options.skipExisting!==false,source:location.href,createdAt:new Date().toISOString()};
  last=job;running=true;stop=false;paused=false;const original={id:C.imageId(location.href),href:location.href};
  const startIndex=retry?job.items.findIndex(i=>job.results.find(r=>r.id===i.id)?.state!=='complete'):0;
  render();
@@ -71,7 +71,7 @@ async function run(retry=false,options={}){
    const item=job.items[i];if(job.results.some(x=>x.id===item.id&&x.state==='complete'))continue;
    while(paused&&!stop){status('已暫停；按「繼續」恢復。');await sleep(300);}if(stop)break;
    status(`第 ${i+1} / ${job.items.length} 張：準備下載…`);
-   try{const r=await downloadOne(job,item,i);if(job.sidecar){try{const saved=await send({type:'image-parameters',post:job.post,batch:job.batch,image:item.id,metadata:r.pageInfo});r.parameterFiles=saved.files;r.missingFields=r.pageInfo?.missingFields||[];}catch(e){r.metadataError=e.message;}}job.results=job.results.filter(r=>r.id!==item.id);job.results.push(r);}
+   try{const r=await downloadOne(job,item,i);if(job.sidecar){try{const saved=await send({type:'image-parameters',post:job.post,batch:job.batch,image:item.id,metadata:r.pageInfo});r.parameterFiles=saved.files;r.missingFields=r.pageInfo?.missingFields||[];}catch(e){r.metadataError=e.message;}}if(job.embed){try{const saved=await send({type:'image-parameters',post:job.post,batch:job.batch,image:item.id,metadata:r.pageInfo,embed:true});r.compatibilityCopy=saved.copy;}catch(e){r.embedError=e.message;}}job.results=job.results.filter(r=>r.id!==item.id);job.results.push(r);}
    catch(e){job.results=job.results.filter(r=>r.id!==item.id);job.results.push({id:item.id,state:'failed',error:e.message});status(e.message);stop=true;break;}
    render();await sleep(1000);
   }
@@ -85,13 +85,13 @@ async function run(retry=false,options={}){
   if(!isStopped)status(`完成：${done} / ${job.items.length} 張，已寫入選定資料夾。`);
   else if(!job.results.some(r=>r.state==='failed'))status(`已停止：完成 ${done} / ${job.items.length} 張。`);
   if(options.sidecar&&job.results.length){
-   await send({type:'sidecar',post:job.post,batch:job.batch,text:JSON.stringify({tool:'Tensor Post Keeper 1.3.1',policy:'Native file bytes are written directly to a user-selected directory, without chrome.downloads, pixel decoding or re-encoding; transferred bytes and saved file are checked by SHA-256. Existing embedded metadata is preserved as supplied by the website. This sidecar does not claim to be embedded metadata.',...job},null,2)}).catch(e=>status(`圖片處理已完成，但資料備份失敗：${e.message}`));
+   await send({type:'sidecar',post:job.post,batch:job.batch,text:JSON.stringify({tool:'Tensor Post Keeper 1.4.0',policy:'Native file bytes are written directly to a user-selected directory, without chrome.downloads, pixel decoding or re-encoding; transferred bytes and saved file are checked by SHA-256. Existing embedded metadata is preserved as supplied by the website. This sidecar does not claim to be embedded metadata.',...job},null,2)}).catch(e=>status(`圖片處理已完成，但資料備份失敗：${e.message}`));
   }
  }
  return {post:job.post,total:job.items.length,done:job.results.filter(r=>r.state==='complete').length,results:job.results};
 }
 function mount(){host=document.createElement('div');host.id='tpk-root';host.dataset.tpkVersion=VERSION;host.style.cssText='position:fixed;right:18px;bottom:18px;z-index:2147483600';ui=host.attachShadow({mode:'open'});
- ui.innerHTML=`<style>:host{all:initial;color-scheme:dark;font:14px/1.6 system-ui,"Microsoft JhengHei",sans-serif;color:#edf5ef}*{box-sizing:border-box}.panel{width:310px;background:#182622;border:1px solid #597568;border-radius:15px;box-shadow:0 10px 40px #0008;overflow:hidden}header{padding:12px 14px;background:#263d32;display:flex;gap:8px;align-items:center}b{flex:1}header button{padding:0 5px;border:0}button{font:inherit;border:1px solid #587463;background:#2a4335;color:inherit;border-radius:8px;padding:7px 10px;cursor:pointer}button:disabled{opacity:.4;cursor:default}#body{padding:14px}#count{font-size:22px;font-weight:700;color:#c5f7d7}#status{font-size:13px;min-height:42px;color:#d0e2d6}#start,#author{width:100%;margin-top:9px;background:#c0edcd;color:#162c1d;font-weight:700;border:0;padding:10px}.row{display:flex;gap:7px;margin-top:9px}small{display:block;color:#a8bcaf;font-size:11px;margin-top:10px}[hidden]{display:none!important}</style><section class="panel"><header><b>▧ 拾圖 <span style="font-size:11px;color:#c7ddcc">v1.3.1 · 資料夾直存</span></b><button id="fold">−</button></header><div id="body"><div id="count"></div><div id="status" role="status" aria-live="polite"></div><button id="start">整篇下載 → 開啟工作台</button><button id="author" hidden>整個作者頁 → 開啟工作台</button><div class="row"><button id="retry" hidden>重試未完成</button><button id="pause" hidden>暫停</button><button id="stop" hidden>停止</button></div><input id="sidecar" type="checkbox" hidden><small>先選一次資料夾，之後自動寫入原檔。<br>不使用逐檔另存流程，不改瀏覽器設定。</small></div></section>`;
+ ui.innerHTML=`<style>:host{all:initial;color-scheme:dark;font:14px/1.6 system-ui,"Microsoft JhengHei",sans-serif;color:#edf5ef}*{box-sizing:border-box}.panel{width:310px;background:#182622;border:1px solid #597568;border-radius:15px;box-shadow:0 10px 40px #0008;overflow:hidden}header{padding:12px 14px;background:#263d32;display:flex;gap:8px;align-items:center}b{flex:1}header button{padding:0 5px;border:0}button{font:inherit;border:1px solid #587463;background:#2a4335;color:inherit;border-radius:8px;padding:7px 10px;cursor:pointer}button:disabled{opacity:.4;cursor:default}#body{padding:14px}#count{font-size:22px;font-weight:700;color:#c5f7d7}#status{font-size:13px;min-height:42px;color:#d0e2d6}#start,#author{width:100%;margin-top:9px;background:#c0edcd;color:#162c1d;font-weight:700;border:0;padding:10px}.row{display:flex;gap:7px;margin-top:9px}small{display:block;color:#a8bcaf;font-size:11px;margin-top:10px}[hidden]{display:none!important}</style><section class="panel"><header><b>▧ 拾圖 <span style="font-size:11px;color:#c7ddcc">v1.4.0 · 資料夾直存</span></b><button id="fold">−</button></header><div id="body"><div id="count"></div><div id="status" role="status" aria-live="polite"></div><button id="start">整篇下載 → 開啟工作台</button><button id="author" hidden>整個作者頁 → 開啟工作台</button><div class="row"><button id="retry" hidden>重試未完成</button><button id="pause" hidden>暫停</button><button id="stop" hidden>停止</button></div><input id="sidecar" type="checkbox" hidden><small>先選一次資料夾，之後自動寫入原檔。<br>不使用逐檔另存流程，不改瀏覽器設定。</small></div></section>`;
  document.documentElement.append(host);
  const open=mode=>send({type:'open-workspace',mode,sourceURL:location.href}).catch(e=>status(e.message));
  ui.querySelector('#start').onclick=()=>open('post');ui.querySelector('#author').onclick=()=>open('author');ui.querySelector('#retry').onclick=()=>open('post');

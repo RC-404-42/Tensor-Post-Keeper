@@ -11,7 +11,7 @@
     if(value){fields[k]=value;rawFields.push({label:name,value});break;}
    }
   }
-  const models=[...p.querySelectorAll('a[href*="/models/"]')].map(a=>({name:text(a),url:a.href})).filter(x=>x.name);const unique=[...new Map(models.map(m=>[m.url,m])).values()];
+  const models=[...p.querySelectorAll('a[href*="/models/"]')].map(a=>{let node=a,type=null;for(let i=0;node&&i<5;i++,node=node.parentElement){if(node!==a&&(node.querySelectorAll?.('a[href*="/models/"]')?.length||0)>1)break;const found=text(node).match(/\b(CHECKPOINT|LORA|EMBEDDING|VAE)\b/);if(found){type=found[1];break;}}return {name:text(a),url:a.href,type};}).filter(x=>x.name);const unique=[...new Map(models.map(m=>[m.url,m])).values()];
   const missing=['prompt','negativePrompt','steps','cfgScale','seed','clipSkip','size','sampler'].filter(k=>!Object.hasOwn(fields,k));
   return {schemaVersion:1,source,imageId:TPKCore.imageId(source),capturedAt:new Date().toISOString(),fields,models:unique,rawFields,panelText:text(p),missingFields:missing,note:'網站目前圖片側欄提供的資料；缺少欄位未推測，未修改圖片。'};
  }

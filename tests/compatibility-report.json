@@ -1,0 +1,55 @@
+{
+  "manager": {
+    "positive": "繁體中文 prompt <lora:known:0.65>",
+    "negative": "bad quality",
+    "model": "Example, model v1",
+    "lora": "known",
+    "steps": 20,
+    "cfg": 7.0,
+    "seed": "4190676170",
+    "size": "832x1216",
+    "raw": "繁體中文 prompt <lora:known:0.65>\nNegative prompt: bad quality\nSteps: 20, CFG scale: 7, Seed: 4190676170, Size: 832x1216, Sampler: Euler a, Clip skip: 2, Model: \"Example, model v1\", TPK source: \"https://tensor.art/images/101?post_id=900\", TPK resources: \"CHECKPOINT Example, model v1 https://tensor.art/models/1 | LORA Unknown LoRA weight https://tensor.art/models/2\"",
+    "source": "Automatic1111",
+    "extra_title": "其他 SD 參數",
+    "extra_params": {
+      "Sampler": "Euler a",
+      "Clip skip": "2",
+      "TPK source": "https://tensor.art/images/101?post_id=900",
+      "TPK resources": "CHECKPOINT Example, model v1 https://tensor.art/models/1 | LORA Unknown LoRA weight https://tensor.art/models/2"
+    }
+  },
+  "studio": {
+    "prompt": "繁體中文 prompt\n<lora:known:0.65>",
+    "negative": "bad\nquality",
+    "steps": 20,
+    "cfg": 7,
+    "seed": 4190676170,
+    "sampler": "Euler a",
+    "scheduler": null,
+    "model": "Example, model v1",
+    "clip_skip": 2,
+    "width": 832,
+    "height": 1216,
+    "extra": {
+      "TPK source": "https://tensor.art/images/101?post_id=900",
+      "TPK resources": "CHECKPOINT Example, model v1 https://tensor.art/models/1 | LORA Unknown LoRA weight https://tensor.art/models/2"
+    },
+    "loras": [
+      {
+        "file": "known",
+        "weight": 0.65
+      }
+    ],
+    "raw": "繁體中文 prompt <lora:known:0.65>\nNegative prompt: bad quality\nSteps: 20, CFG scale: 7, Seed: 4190676170, Size: 832x1216, Sampler: Euler a, Clip skip: 2, Model: \"Example, model v1\", TPK source: \"https://tensor.art/images/101?post_id=900\", TPK resources: \"CHECKPOINT Example, model v1 https://tensor.art/models/1 | LORA Unknown LoRA weight https://tensor.art/models/2\""
+  },
+  "sources": {
+    "CoCo_SD_Manager_Public/app/ui/page_images.py": "5f7caa363d06f87482c7248a6be7ae17222a316b218f57372d345d94bb036a82",
+    "CoCo-Image-Studio/data/core/gallery_index.py": "0eec9a01d212ad944e0fcabb22d4d2cd753f4b718f04683ec4dbc0d05322bc4c",
+    "CoCo-Image-Studio/data/core/meta_formats.py": "e8c646356bb93cc6c1854bbd3f10ef181d56c80389f5aef9a21ad47a1f317bfb"
+  },
+  "validation": {
+    "date": "2026-10-27",
+    "method": "Actual parser entrypoints extracted from the public source AST; no desktop GUI executed. PNG IDAT and decoded pixels verified unchanged.",
+    "browser_conversion": "Mocked API test only; real JPEG/WebP browser conversion and desktop import still need user testing."
+  }
+}

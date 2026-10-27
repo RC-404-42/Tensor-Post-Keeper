@@ -9,7 +9,7 @@
    port.onmessage=e=>{const m=e.data;if(m?.type==='ready'){clearTimeout(timer);resolve();return;}const task=waiters.get(m?.token);if(!task)return;
     if(m.type==='armed'){if(m.error)task.reject(Error(m.error));else{try{task.armed();}catch(e){task.reject(e);}}}
     if(m.type==='file'){if(m.error)task.reject(Error(m.error));else task.resolve(m);}
-   };port.start();window.postMessage({type:'TPK_CONNECT_V131'},location.origin,[channel.port2]);
+   };port.start();window.postMessage({type:'TPK_CONNECT_V140'},location.origin,[channel.port2]);
   });return ready;
  }
  async function capture(token,button,shouldStop){

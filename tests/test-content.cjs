@@ -1,7 +1,7 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const vm=require('node:vm');const codeDir=fs.existsSync(__dirname+'/../extension/core.js')?__dirname+'/../extension':__dirname+'/..';const core=require(codeDir+'/core.js');
 // Execute the real content script against a deterministic SPA and download bridge.
 // The fake native download control is the only producer of downloads.
-function fixture(domain,failId,withParameters=false,existing=false){
+function fixture(domain,failId,withParameters=false,existing=false,embed=false){
  let messages=[],current='101',clicked=[],downloaded=[],pending=null,token=0,messageListener;
  const location={href:`https://${domain}/images/101?post_id=900`};
  const controls=new Map();const control=id=>{if(!controls.has(id))controls.set(id,{textContent:'',checked:true,style:{}});return controls.get(id);};
@@ -19,7 +19,7 @@ function fixture(domain,failId,withParameters=false,existing=false){
  }}};
  const context=vm.createContext({document:doc,location,chrome,TPKCore:core,URL,Date,console,TPKParameters:{collect:(_,source)=>({imageId:core.imageId(source),source,fields:{seed:core.imageId(source)},missingFields:[]})},TPKProfile:{profile:()=>null},TPKCapture:{capture:async(token,b)=>{b.click();return {}},transfer:async()=>{}},getComputedStyle:()=>({visibility:'visible'}),setInterval:()=>{},setTimeout:(fn)=>setTimeout(fn,1)});
  vm.runInContext(fs.readFileSync(codeDir+'/content.js','utf8'),context);
- return {ui,controls,clicked,downloaded,location,messages,action:()=>messageListener({type:'open-from-action'},{id:'test-id'},()=>{}),run:()=>new Promise(res=>messageListener({type:'run-post',options:{skipExisting:true,sidecar:withParameters}},{id:'test-id'},res)),retry:()=>new Promise(res=>messageListener({type:'run-post',options:{skipExisting:true,sidecar:withParameters}},{id:'test-id'},res))};
+ return {ui,controls,clicked,downloaded,location,messages,action:()=>messageListener({type:'open-from-action'},{id:'test-id'},()=>{}),run:()=>new Promise(res=>messageListener({type:'run-post',options:{skipExisting:true,sidecar:withParameters,embed}},{id:'test-id'},res)),retry:()=>new Promise(res=>messageListener({type:'run-post',options:{skipExisting:true,sidecar:withParameters,embed}},{id:'test-id'},res))};
 }
 for(const domain of ['tensor.art','tensorhub.art'])test(`${domain}: all images in order and restore original view`,async()=>{const f=fixture(domain);await f.run();assert.deepEqual(f.clicked,['101','102','103']);assert.deepEqual(f.downloaded,['101','102','103']);assert.match(f.location.href,/\/101\?/);assert.match(f.controls.get('#status').textContent,/完成：3 \/ 3/);});
 test('failure stops the current post and reports the error',async()=>{const f=fixture('tensor.art','102');await f.run();assert.deepEqual(f.clicked,['101','102']);assert.equal(f.controls.get('#retry').hidden,false);// Durable skip/resume is verified against real files in test-directory.cjs.
@@ -29,3 +29,5 @@ for(const domain of ['tensor.art','tensorhub.art'])test(`${domain}: action forwa
 
 test('each downloaded image sends its own current parameters',async()=>{const f=fixture('tensor.art',null,true);await f.run();const saved=f.messages.filter(m=>m.type==='image-parameters');assert.equal(saved.length,3);assert.deepEqual(saved.map(m=>m.metadata.fields.seed),['101','102','103']);});
 test('existing verified pictures still get parameter sidecars without redownloading',async()=>{const f=fixture('tensorhub.art',null,true,true);await f.run();assert.equal(f.downloaded.length,0);assert.deepEqual(f.messages.filter(m=>m.type==='image-parameters').map(m=>m.metadata.imageId),['101','102','103']);});
+
+test('embedding alone collects metadata for existing images without redownloading or enabling text sidecars',async()=>{const f=fixture('tensor.art',null,false,true,true);await f.run();assert.equal(f.downloaded.length,0);const saved=f.messages.filter(m=>m.type==='image-parameters');assert.equal(saved.length,3);assert.ok(saved.every(m=>m.embed===true));assert.deepEqual(saved.map(m=>m.metadata.imageId),['101','102','103']);});

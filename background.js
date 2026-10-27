@@ -25,7 +25,7 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
    if(w.running)throw Error('請先停止目前工作，再重新連接來源。');
    let d;try{d=await chrome.tabs.sendMessage(w.sourceTabId,{type:'describe'});}catch{throw Error('無法連接原本的來源分頁；請重新整理網站，再按「重新連接來源」。若已關閉，請從網站重新開啟工作台。');}
    if(!d?.ok)throw Error(d?.error||'來源分頁沒有回應。');
-   if(d.version!=='1.3.1')throw Error('來源頁不是 1.3.1；請重新載入擴充功能並重新整理網站。');
+   if(d.version!=='1.4.0')throw Error('來源頁不是 1.4.0；請重新載入擴充功能並重新整理網站。');
    const mode=d.profile&&!d.gallery?'author':w.mode,source=C.source(d.url,mode);
    if(source.mode==='author'&&d.profile?.id!==source.author)throw Error('作者來源未就緒，請先在來源分頁開啟作者個人頁。');
    if(source.mode==='post'&&!d.gallery)throw Error('找不到貼文輪播與原生下載按鈕；請先在來源分頁打開貼文圖片，再重新連接來源。');
@@ -41,7 +41,7 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
    const value={tabId:sender.tab.id,token:crypto.randomUUID(),at:Date.now(),post:C.safePart(m.post),batch:m.batch?C.safePart(m.batch):'',image:String(m.image),index:Number(m.index),phase:'armed'};
    if(!/^\d+$/.test(value.image)||!Number.isSafeInteger(value.index)||value.index<0)throw Error('圖片資料不正確。');await chrome.storage.session.set({pending:value});return {token:value.token};
   }
-  if(m.type==='image-parameters'){await ready();if(!w?.running||w.processingTabId!==sender.tab.id)throw Error('來源不屬於目前工作。');if(!m.metadata||m.metadata.imageId!==String(m.image)||JSON.stringify(m.metadata).length>2000000)throw Error('參數來源或大小不正確。');return writer('parameters',{post:C.safePart(m.post),batch:m.batch?C.safePart(m.batch):'',image:String(m.image),metadata:m.metadata});}
+  if(m.type==='image-parameters'){await ready();if(!w?.running||w.processingTabId!==sender.tab.id)throw Error('來源不屬於目前工作。');if(!m.metadata||m.metadata.imageId!==String(m.image)||JSON.stringify(m.metadata).length>2000000)throw Error('參數來源或大小不正確。');return writer('parameters',{post:C.safePart(m.post),batch:m.batch?C.safePart(m.batch):'',image:String(m.image),metadata:m.metadata,embed:!!m.embed});}
   if(m.type==='sidecar'){if(typeof m.text!=='string'||m.text.length>10e6)throw Error('資料檔過大。');return writer('sidecar',{post:C.safePart(m.post),batch:m.batch?C.safePart(m.batch):'',text:m.text});}
   const p=await get('pending');if(!p||p.tabId!==sender.tab.id||p.token!==m.token)throw Error('下載工作已取消或重設。');
   if(m.type==='buffer-start'){
